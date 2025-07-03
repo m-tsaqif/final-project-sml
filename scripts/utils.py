@@ -3,12 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.feature_selection import RFECV,  SelectKBest, mutual_info_classif
+from sklearn.feature_selection import mutual_info_classif
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.multiclass import type_of_target
-from sklearn.preprocessing import TargetEncoder, LabelEncoder, PowerTransformer, StandardScaler, label_binarize
+from sklearn.preprocessing import PowerTransformer, StandardScaler, label_binarize
 from sklearn.metrics import (classification_report, confusion_matrix, ConfusionMatrixDisplay,
-                             roc_curve, auc, roc_auc_score, make_scorer)
+                             roc_curve, auc, roc_auc_score)
 from category_encoders import TargetEncoder
 from copy import deepcopy
 
@@ -196,42 +196,6 @@ class StratifiedKFoldMulticlass(BaseEstimator, TransformerMixin):
     def _predict_from_proba(self, X):
         """Helper untuk prediksi kelas dari probabilitas."""
         return np.argmax(self.predict_proba(X), axis=1)
-
-# Recursive Feature Eliminator
-class RecursiveFeatureEliminator(BaseEstimator, TransformerMixin):
-    def __init__(self, estimator, n_folds=5):
-        self.estimator = estimator
-        self.n_folds = n_folds
-        self.rfe = None
-
-    def fit(self, X, y):
-        stratified_kfold = StratifiedKFold(
-            n_splits=self.n_folds,
-            shuffle=True,
-            random_state=42
-        )
-
-        self.rfe = RFECV(
-            estimator=self.estimator,
-            cv=stratified_kfold,
-            scoring=self._multiclass_roc_auc_scorer,
-            step=1,
-            min_features_to_select=1
-        )
-
-        self.rfe.fit(X, y)
-        return self
-
-    def transform(self, X):
-        return self.rfe.transform(X)
-
-    def get_support(self):
-        return self.rfe.get_support()
-
-    @staticmethod
-    def _multiclass_roc_auc_scorer(estimator, X, y):
-        y_pred = estimator.predict_proba(X)
-        return roc_auc_score(y, y_pred, multi_class="ovr")
 
 # Classification Evaluator
 class ClassificationEvaluator:
